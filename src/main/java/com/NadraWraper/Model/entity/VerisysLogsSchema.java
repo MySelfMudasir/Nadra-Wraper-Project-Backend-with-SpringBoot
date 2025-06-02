@@ -16,7 +16,7 @@ public class VerisysLogsSchema {
     // Use sequence or identity based on Oracle setup (see earlier advice)
     private Long id;
 
-    @Column(name = "NADRA_VERIFY_CITIZEN_RESPONSE")
+    @Column(name = "NADRA_VERIFY_RESPONSE")
     private String nadraVerifyCitizenResponse;
 
     @Column(name = "RESPONSE_TIMESTAMP")

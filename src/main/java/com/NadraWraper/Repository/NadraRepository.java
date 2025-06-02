@@ -52,10 +52,20 @@ public interface NadraRepository extends JpaRepository<NadraSchema, Long> {
 
 
     //findByCnic
-    @Query(value = "SELECT RESPONSE_TIMESTAMP, NADRA_VERIFY_CITIZEN_RESPONSE FROM VERISY_LOGS WHERE CNIC = ?1", nativeQuery = true)
+    @Query(value = "SELECT RESPONSE_TIMESTAMP, NADRA_VERIFY_RESPONSE FROM VERISY_LOGS WHERE CNIC = ?1", nativeQuery = true)
     List<Object[]> findNadraResponseByCnic(@Param("cnic") String cnic);
 
 
+    //findByCnic
+    @Query(value = "SELECT * FROM verisys_management WHERE CNIC = ?1", nativeQuery = true)
+    Optional<NadraSchema> findByCnic(@Param("cnic") String cnic);
+
+
+    //updateAllStatusByCnic
+    @Modifying
+    @Transactional
+    @Query("UPDATE NadraSchema u SET u.status = :status WHERE u.cnic = :cnic AND u.status = 'A'")
+    int updateAllStatusByCnic(@Param("status") String status, @Param("cnic") String cnic);
 
 
 

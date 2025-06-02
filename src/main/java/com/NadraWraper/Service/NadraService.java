@@ -38,60 +38,73 @@ public class NadraService {
     private AESKeyProvider aesKeyProvider;
 
     public ResponseEntity<String> saveAccount(String email, String accountType, String cnic, String cnicIssueDate, String mobile, String recordType, String ntn, String pin, List<NadraSchema> subRecords) {
-        // Create a new NadraSchema object and set the values
 
         // Get the next ID from the repository
         Long nextId = nadraRepository.getNextManagementId();
         if (nextId == null) nextId = 1L;
 
+        boolean isCnicExists = this.isCnicExists(cnic.trim());
 
-        try {
-            // Save main user
-            NadraSchema mainRecord = new NadraSchema();
-            mainRecord.setId(nextId);
-            mainRecord.setAccountType(accountType.trim());
-            mainRecord.setCnic(cnic.trim());
-            mainRecord.setEmail(email.trim());
-            mainRecord.setMobile(mobile.trim());
-            mainRecord.setStatus("P".trim()); // Use uppercase
-            mainRecord.setRecordType(recordType.trim()); // <- make sure this is being called!
-            mainRecord.setNtn(ntn.trim()); // <- make sure this is being called!
-            String encryptedPin = encryptEachPin(pin);
-            mainRecord.setPin(encryptedPin);
+        if( isCnicExists) {
+            try {
+                // Save main user
+                NadraSchema mainRecord = new NadraSchema();
+                mainRecord.setId(nextId);
+                mainRecord.setAccountType(accountType.trim());
+                mainRecord.setCnic(cnic.trim());
+                mainRecord.setEmail(email.trim());
+                mainRecord.setMobile(mobile.trim());
+                mainRecord.setStatus("P".trim()); // Use uppercase
+                mainRecord.setRecordType(recordType.trim()); // <- make sure this is being called!
+                mainRecord.setNtn(ntn.trim()); // <- make sure this is being called!
+                String encryptedPin = encryptEachPin(pin);
+                mainRecord.setPin(encryptedPin);
 
-            // Convert String date to LocalDate
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-            LocalDate cnicIssueDateConverted = LocalDate.parse(cnicIssueDate, formatter);
-            mainRecord.setCnicIssueDate(cnicIssueDateConverted);
+                // Convert String date to LocalDate
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+                LocalDate cnicIssueDateConverted = LocalDate.parse(cnicIssueDate, formatter);
+                mainRecord.setCnicIssueDate(cnicIssueDateConverted);
 
-            // Save the user to the database
-            denormalizeUserSchema(mainRecord);
-            nadraRepository.save(mainRecord);
+                // Save the user to the database
+                denormalizeUserSchema(mainRecord);
+                nadraRepository.save(mainRecord);
 
-            // Now save subRecords
-            if (subRecords != null) {
-                for (NadraSchema sub : subRecords) {
-                    Long subNextId = nadraRepository.getNextManagementId(); // get a new ID
-                    sub.setId(subNextId); // set the ID
-                    sub.setSubAccountId(nextId); // set the ID
-                    mainRecord.setRecordType(recordType.trim()); // <- check if recordType is null
-                    mainRecord.setNtn(ntn.trim()); // <- check if recordType is null
-                    mainRecord.setCnic(cnic);
-                    sub.setPin(mainRecord.getPin());
-                    sub.setStatus("P"); // Also use uppercase
-                    mainRecord.setCnicIssueDate(cnicIssueDateConverted);
-                    nadraRepository.save(sub);
+                // Now save subRecords
+                if (subRecords != null) {
+                    for (NadraSchema sub : subRecords) {
+                        Long subNextId = nadraRepository.getNextManagementId(); // get a new ID
+                        sub.setId(subNextId); // set the ID
+                        sub.setSubAccountId(nextId); // set the ID
+                        mainRecord.setRecordType(recordType.trim()); // <- check if recordType is null
+                        mainRecord.setNtn(ntn.trim()); // <- check if recordType is null
+                        mainRecord.setCnic(cnic);
+                        sub.setPin(mainRecord.getPin());
+                        sub.setStatus("P"); // Also use uppercase
+                        mainRecord.setCnicIssueDate(cnicIssueDateConverted);
+                        nadraRepository.save(sub);
+                    }
                 }
+            } catch (Exception e) {
+                // Return a 500 response if there was an error saving
+                return new ResponseEntity<>("Error: Account addition failed. " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
             }
-        } catch (Exception e) {
-            // Return a 500 response if there was an error saving
-            return new ResponseEntity<>("Error: Account addition failed. " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
         // Return a success response if everything went well
         return new ResponseEntity<>("Account added successfully", HttpStatus.OK);
     }
 
+
+
+
+    public boolean isCnicExists(String cnic) {
+        // Check if the CNIC already exists in the database
+        int updated = nadraRepository.resetStatusByCnic("P", cnic); // Use a valid value like "A"
+        if (updated == 0) {
+            return false;
+        }
+        return true;
+    }
 
 
 
