@@ -31,11 +31,13 @@ public class SecureUserRequestFilter extends OncePerRequestFilter {
 		url = url.substring(url.lastIndexOf('/'));
 
 		// Apply filter only for /echo or /test endpoint
-		if (url.contentEquals("/echo") || url.contentEquals("/VerifyFingerPrint")
-				|| url.contentEquals("/generate") || url.contentEquals("/get")
+		if (url.contentEquals("/echo")
+				|| url.contentEquals("/VerifyFingerPrint")
+				|| url.contentEquals("/VerifyCitizen") || url.contentEquals("/generate") || url.contentEquals("/get")
 				|| url.contentEquals("/addAccount") || url.contentEquals("/getAccountsDetails")
 				|| url.contentEquals("/updateAccount") || url.contentEquals("/resetStatus")
-				|| url.contentEquals("/getNadraResponse")
+				|| url.contentEquals("/getNadraResponse") || url.contentEquals("/verifyotp")|| url.contentEquals("/generateOtp")
+
 		) {
 			System.out.println(request);
 			String sessionToken = tokenUtil.getToken(request);

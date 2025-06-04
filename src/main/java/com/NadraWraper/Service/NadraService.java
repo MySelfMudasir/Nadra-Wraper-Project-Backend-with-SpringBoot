@@ -37,15 +37,15 @@ public class NadraService {
     @Autowired
     private AESKeyProvider aesKeyProvider;
 
+
     public ResponseEntity<String> saveAccount(String email, String accountType, String cnic, String cnicIssueDate, String mobile, String recordType, String ntn, String pin, List<NadraSchema> subRecords) {
 
         // Get the next ID from the repository
         Long nextId = nadraRepository.getNextManagementId();
         if (nextId == null) nextId = 1L;
 
-        boolean isCnicExists = this.isCnicExists(cnic.trim());
+        this.isCnicExists(cnic.trim());
 
-        if( isCnicExists) {
             try {
                 // Save main user
                 NadraSchema mainRecord = new NadraSchema();
@@ -88,13 +88,10 @@ public class NadraService {
                 // Return a 500 response if there was an error saving
                 return new ResponseEntity<>("Error: Account addition failed. " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
             }
-        }
 
         // Return a success response if everything went well
         return new ResponseEntity<>("Account added successfully", HttpStatus.OK);
     }
-
-
 
 
     public boolean isCnicExists(String cnic) {

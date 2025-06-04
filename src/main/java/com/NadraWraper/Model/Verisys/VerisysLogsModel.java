@@ -24,6 +24,9 @@ public class VerisysLogsModel {
     )
     @Column(name = "log_id")
     private Long logId;
+    @Column(name = "transaction_id")
+    private Long transactionId;
+
 
     @Column(name = "cnic", nullable = false, length = 20)
     private String cnic;
@@ -33,20 +36,21 @@ public class VerisysLogsModel {
     private String jpRequest;
 
     @Lob
-    @Column(name = "nadra_request", nullable = false)
-    private String nadraRequest;
+    @Column(name = "nadra_verify_request", nullable = false)
+    private String nadraVerifyRequest;
+
+    @Column(name = "API_ENDPOINT", nullable = false)
+    private String apiEndpoint;
+
+    @Column(name = "SESSION_ID")
+    private String sessionId;
+
+    @Column(name = "CREATED_AT")
+    private LocalDateTime createdAt;
 
     @Lob
-    @Column(name = "nadra_response")
-    private String nadraResponse;
-
-    @Lob
-    @Column(name = "nadra_verify_citizen_request", nullable = false)
-    private String nadraVerifyCitizenRequest;
-
-    @Lob
-    @Column(name = "nadra_verify_citizen_response")
-    private String nadraVerifyCitizenResponse;
+    @Column(name = "nadra_verify_response")
+    private String nadraVerifyResponse;
 
     @Column(name = "request_timestamp", nullable = false)
     private LocalDateTime requestTimestamp;

@@ -4,6 +4,7 @@ import com.NadraWraper.Model.DTO.NadraVerifyFingerprintResponse;
 import com.NadraWraper.Model.JpVerifyFingerprint;
 
 import com.NadraWraper.Service.FingerprintService;
+import com.NadraWraper.Service.VerifyCitizenService;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.io.IOUtils;
 import org.springframework.http.MediaType;
@@ -20,6 +21,7 @@ import java.util.Base64;
 @CrossOrigin(origins = "*", allowedHeaders = "*")
 public class NadraController {
     private final FingerprintService fingerprintService;
+    private final VerifyCitizenService verifyCitizenService;
 //    @Value("${jp.userName}")
 //    private String userName;
 //    @Value("${jp.password}")
@@ -39,6 +41,33 @@ public class NadraController {
 //            return response;
 //        }
 //    }
+
+
+    @PostMapping(
+            value    = "/VerifyCitizen",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
+    public ResponseEntity<?> verifyCitizen(
+            @RequestPart("FINGER_TEMPLATE") MultipartFile fingerTemplate,
+            @RequestPart("CITIZEN_NUMBER") String citizenNumber,
+            @RequestPart("FINGER_INDEX") String fingerIndex,
+            @RequestPart("AREA_NAME") String areaName,
+            @RequestPart("CONTACT_NUMBER") String contactNumber,
+            @RequestPart("ISSUE_DATE") String issueDate
+    ) throws Exception {
+        JpVerifyFingerprint request = new JpVerifyFingerprint();
+        String fingerTemplateBase64 = Base64.getEncoder()
+                .encodeToString(IOUtils.toByteArray(fingerTemplate.getInputStream()));
+        request.setFingerTemplate(fingerTemplateBase64);
+        request.setCitizenNumber(citizenNumber);
+        request.setFingerIndex(fingerIndex);
+        request.setAreaName(areaName);
+        request.setContactNumber(contactNumber);
+        request.setIssueDate(issueDate);
+        Object nadraResponse = verifyCitizenService.processCitizenVerification(request);
+        return ResponseEntity.ok(nadraResponse);
+    }
+
 
     @PostMapping(
             value    = "/VerifyFingerPrint",

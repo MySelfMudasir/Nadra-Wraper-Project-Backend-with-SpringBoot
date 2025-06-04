@@ -5,14 +5,17 @@ import lombok.*;
 import javax.persistence.*;
 import java.sql.Timestamp;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
+@Getter
+@Setter
 @Entity
 @Table(name = "verisys_management")
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class NadraSchema {
+public class UserSchema {
 
     @Id
     // Use sequence or identity based on Oracle setup (see earlier advice)
@@ -20,11 +23,13 @@ public class NadraSchema {
 
     @Column(name = "SUB_ACCOUNT_ID")
     private Long subAccountId;
+    @Column(name = "OTPGENERATEDTIME")
+    private Timestamp otpGeneratedTime;
 
     @Column(name = "ACCOUNT_TYPE")
     private String accountType;
 
-    @Column(name = "CNIC")
+    @Column(name="CNIC")
     private String cnic;
 
     @Column(name = "CNIC_ISSUE_DATE")
@@ -32,6 +37,9 @@ public class NadraSchema {
 
     @Column(name = "EMAIL")
     private String email;
+
+
+
     @Column(name = "MOBILE")
     private String mobile;
 
@@ -50,8 +58,10 @@ public class NadraSchema {
 
     @Column(name = "PIN")
     private String pin;
-    @Column(name = "OTPGENERATEDTIME")
-    private Timestamp otpGeneratedTime;
+
+
+
+
     @Transient
-    private List<NadraSchema> subRecords;
+    private List<UserSchema> subRecords;
 }

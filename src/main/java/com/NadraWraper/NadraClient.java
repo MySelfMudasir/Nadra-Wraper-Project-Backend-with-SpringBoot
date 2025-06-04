@@ -7,6 +7,7 @@ import com.NadraWraper.Model.NadraVerifyFingerprintRequest;
 import com.NadraWraper.Model.JpVerifyFingerprint;
 import com.NadraWraper.Model.Verisys.VerisysLogsModel;
 import com.NadraWraper.Repository.VerisysLogsRepository;
+import com.NadraWraper.Repository.VerisysStatusRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,15 +15,18 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.Objects;
 import java.util.logging.Logger;
 
 @Component
 @RequiredArgsConstructor
+@Transactional
 public class NadraClient {
 
     private static final Logger log = Logger.getLogger(NadraClient.class.getName());
@@ -36,6 +40,7 @@ public class NadraClient {
     private String clientId;
     private String clientSecret;
     private String franchiseeId;
+    private VerisysStatusRepository verisysStatusRepository;
 
     @Autowired
     public NadraClient(
@@ -71,9 +76,14 @@ public class NadraClient {
         HttpHeaders headers = buildHeaders();
         HttpEntity<NadraVerifyCitizenRequest> entity = new HttpEntity<>(request, headers);
 
+//        try{
+//
+//        }catch (Exception e){}
         log.info(() -> "Calling verifyCitizen → URL: " + citizenUrl + "  payload: " + serialize(request));
         ResponseEntity<NadraVerifyCitizenResponse> resp =
-                restTemplate.postForEntity(citizenUrl, entity, NadraVerifyCitizenResponse.class);
+                restTemplate.postForEntity(citizenUrl,
+                        entity,
+                        NadraVerifyCitizenResponse.class);
 
         log.info(() -> "verifyCitizen response status: " + resp.getStatusCode());
         log.info(() -> "verifyCitizen response body: " + serialize(resp.getBody()));
@@ -81,10 +91,12 @@ public class NadraClient {
         VerisysLogsModel logEntry = VerisysLogsModel.builder()
                 .cnic(request.getCitizenNumber())
                 .jpRequest(serialize(jpRequest))
-                .nadraVerifyCitizenRequest(serialize(request))
-                .nadraVerifyCitizenResponse(serialize(resp.getBody()))
-                .nadraRequest(null)
-                .nadraResponse(null)
+                .transactionId(Long.valueOf(request.getTransactionId()))
+                .apiEndpoint("/api/verifyCitizen")
+                .nadraVerifyRequest(serialize(request))
+                .nadraVerifyResponse(serialize(resp.getBody()))
+                .sessionId(Objects.requireNonNull(resp.getBody()).getSessionId())
+                .createdAt(LocalDateTime.now())
                 .requestTimestamp(LocalDateTime.now())
                 .responseTimestamp(LocalDateTime.now())
                 .build();
@@ -111,12 +123,21 @@ public class NadraClient {
         VerisysLogsModel logEntry = VerisysLogsModel.builder()
                 .cnic(jpRequest.getCitizenNumber())
                 .jpRequest(serialize(jpRequest))
-                .nadraRequest(serialize(request))
-                .nadraResponse(serialize(resp.getBody()))
+                .transactionId(Long.valueOf(request.getTransactionId()))
+                .nadraVerifyRequest(serialize(request))
+                .nadraVerifyResponse(serialize(resp.getBody()))
+                .sessionId(Objects.requireNonNull(resp.getBody()).getSessionId())
+                .createdAt(LocalDateTime.now())
+                .apiEndpoint("/api/verifyFingerprint")
                 .requestTimestamp(LocalDateTime.now())
                 .responseTimestamp(LocalDateTime.now())
                 .build();
         verisysLogsRepository.save(logEntry);
+
+        if("100".equals(resp.getStatusCode())){
+            verisysStatusRepository.updateStatusByCnic(request.getCitizenNumber(), "A");
+            log.info("Verification successful for transaction ID: " + request.getTransactionId());
+        }
 
         log.info(() -> "verifyFingerprint response status: " + resp.getStatusCode());
         log.info(() -> "verifyFingerprint response body: " + serialize(resp.getBody()));
